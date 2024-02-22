@@ -19,7 +19,30 @@ def survey_start():
 
 
 @app.post("/begin")
-def handle_begin():
 
+def handle_begin():
+    """handles post request to begin endpoint"""
     return redirect("/questions/0")
 
+
+@app.get("/questions/<num>")
+def handle_questions(num):
+    """handles get request to questions, outputs specific question"""
+    if int(num) >= len(survey.questions):
+        return redirect("/completion")
+
+    return render_template("question.html", question = survey.questions[int(num)] )
+
+
+@app.post("/answer")
+def handle_answer():
+
+    responses.append(request.form["answer"])
+    return redirect(f"/questions/{len(responses)}")
+
+@app.get("/completion")
+def handle_completion():
+    return render_template("completion.html", survey=survey,
+                           responses=responses,
+                           range = range(len(survey.questions))
+                                       )
