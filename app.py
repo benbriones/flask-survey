@@ -8,32 +8,34 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 debug = DebugToolbarExtension(app)
 
-responses = []
 
 @app.get("/")
 def survey_start():
     """Returns survery start page"""
 
     return render_template("survey_start.html",
-                           title=survey.title,
-                           instructions=survey.instructions)
+                        title=survey.title,
+                        instructions=survey.instructions)
 
 
 @app.post("/begin")
 def handle_begin():
     """handles post request to begin endpoint"""
 
-    global responses
-    responses = []
+    session["responses"] = []
     return redirect("/questions/0")
 
 
 @app.get("/questions/<int:index>")
 def handle_questions(index):
     """handles get request to questions, outputs specific question"""
-
-    if index >= len(survey.questions):
+    if len(survey.questions) == len(session['responses']):
         return redirect("/completion")
+
+
+    if index != len(session["responses"]):
+        return redirect(f"/questions/{len(session['responses'])}")
+
 
     return render_template("question.html", question = survey.questions[index])
 
@@ -42,16 +44,15 @@ def handle_questions(index):
 def handle_answer():
     """handles post request to answer, appends answer to
     responses and redirects to next question"""
+    answers = session['responses']
+    answers.append(request.form["answer"])
+    session['responses'] = answers
 
-    responses.append(request.form["answer"])
-    return redirect(f"/questions/{len(responses)}")
+    return redirect(f"/questions/{len(session['responses'])}")
 
 
 @app.get("/completion")
 def handle_completion():
     """handles get request to completion page, returns thank you page"""
 
-    return render_template("completion.html",
-                           survey=survey,
-                           responses=responses)
-
+    return render_template("completion.html", survey=survey)
