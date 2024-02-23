@@ -9,6 +9,12 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 
 
+def earliest_unanswered():
+    """Returns index of earliest question that hasn't been answered"""
+    num_questions = len(survey.questions)
+    ordered_answers = [session["responses"][str(i)] for i in range(num_questions)]
+    return ordered_answers.index(None)
+
 @app.get("/")
 def survey_start():
     """Returns survery start page"""
@@ -22,21 +28,25 @@ def survey_start():
 def handle_begin():
     """handles post request to begin endpoint"""
 
-    session["responses"] = []
+    session["responses"] = {str(i): None for i in range(len(survey.questions))}
+
     return redirect("/questions/0")
 
 
 @app.get("/questions/<int:index>")
 def handle_questions(index):
     """handles get request to questions, outputs specific question"""
-    if len(survey.questions) == len(session['responses']):
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print(session["responses"].values())
+    if None not in session["responses"].values():
         return redirect("/completion")
 
+    num_questions = len(survey.questions)
 
-    if index != len(session["responses"]):
-        return redirect(f"/questions/{len(session['responses'])}")
+    if index >= num_questions:
+        return redirect(f"/questions/{earliest_unanswered()}")
 
-
+    session["active_question"] = str(index)
     return render_template("question.html", question = survey.questions[index])
 
 
@@ -44,11 +54,14 @@ def handle_questions(index):
 def handle_answer():
     """handles post request to answer, appends answer to
     responses and redirects to next question"""
+
     answers = session['responses']
-    answers.append(request.form["answer"])
+    answers[str(session["active_question"])] = (request.form["answer"])
     session['responses'] = answers
 
-    return redirect(f"/questions/{len(session['responses'])}")
+
+
+    return redirect(f"/questions/{earliest_unanswered()}")
 
 
 @app.get("/completion")
