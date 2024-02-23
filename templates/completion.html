@@ -6,9 +6,9 @@
 
   <ul>
     {% for question in survey.questions %}
+    <!-- {% set index = loop.index0|string %} -->
 
-    <li><b>{{question.prompt}}</b> {{session["responses"][loop.index0]}}</li>
-
+    <li><b>{{question.prompt}}</b> {{session["responses"][ loop.index0|string ]}}</li>
     {% endfor %}
   </ul>
 

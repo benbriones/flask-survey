@@ -13,6 +13,8 @@ def earliest_unanswered():
     """Returns index of earliest question that hasn't been answered"""
     num_questions = len(survey.questions)
     ordered_answers = [session["responses"][str(i)] for i in range(num_questions)]
+    if None not in ordered_answers:
+        return None
     return ordered_answers.index(None)
 
 @app.get("/")
@@ -36,8 +38,6 @@ def handle_begin():
 @app.get("/questions/<int:index>")
 def handle_questions(index):
     """handles get request to questions, outputs specific question"""
-    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    print(session["responses"].values())
     if None not in session["responses"].values():
         return redirect("/completion")
 
@@ -59,13 +59,17 @@ def handle_answer():
     answers[str(session["active_question"])] = (request.form["answer"])
     session['responses'] = answers
 
+    index = earliest_unanswered()
 
+    if index == None:
+        return redirect("/completion")
 
-    return redirect(f"/questions/{earliest_unanswered()}")
+    return redirect(f"/questions/{index}")
 
 
 @app.get("/completion")
 def handle_completion():
     """handles get request to completion page, returns thank you page"""
 
-    return render_template("completion.html", survey=survey)
+    return render_template("completion.html",
+                           survey=survey )
